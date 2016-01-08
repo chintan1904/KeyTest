@@ -10,6 +10,10 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.ie.InternetExplorerDriver;
+import org.openqa.selenium.support.ui.ExpectedCondition;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Select;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import utility.PropertyFile;
 
@@ -73,31 +77,62 @@ public class Operation {
 	public static void close(String sourceElement, String data) throws Exception {
 		driver.quit();
 	}
+	
+	public static void SelectDropDownByValue(String sourceElement, String data) throws Exception {
+		Select select = new Select(locateElement(sourceElement));
+		select.selectByValue(data);
+	}
+	
+	public static void SelectDropDownByIndex(String sourceElement, String data) throws Exception {
+		Select select = new Select(locateElement(sourceElement));
+		select.selectByIndex(Integer.parseInt(data));
+	}
+	
+	public static void WaitForPresenceOfElement(String sourceElement, String data) throws Exception {
 
-	private static WebElement locateElement(String sourceElement) {
+		if (!StringUtils.isBlank(data))
+			data = "10";
+		int time = Integer.parseInt(data) * 1000;
+		WebDriverWait wait = new WebDriverWait(driver, time);
+		wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(locator(sourceElement)));
+	}
+	
+	private static By locator(String sourceElement) throws Exception{
+
 		String locator[] = OR.getProperty(sourceElement).split("\\$\\$");
 		Locator locatorType = Locator.valueOf(locator[0]);
 		String locatorValue = locator[1];
 
-		WebElement webelement = null;
-
+		By by = null;
 		switch (locatorType) {
 		case XPATH:
-			webelement = driver.findElement(By.xpath(locatorValue));
+			by = By.xpath(locatorValue);
 			break;
 		case CSS:
-			webelement = driver.findElement(By.cssSelector(locatorValue));
+			by = By.cssSelector(locatorValue);
 			break;
 		case ID:
-			webelement = driver.findElement(By.id(locatorValue));
+			by = By.id(locatorValue);
 			break;
 		case NAME:
-			webelement = driver.findElement(By.name(locatorValue));
+			by = By.name(locatorValue);
 			break;
 		default:
-			break;
+			throw new Exception("Invalid by locator provided for source element : "+sourceElement);
 		}
 
+		return by;
+	}
+	
+	
+
+	private static WebElement locateElement(String sourceElement) throws Exception{
+
+		WebElement webelement = null;
+		By by = locator(sourceElement);
+		webelement = driver.findElement(by);
+		if(webelement == null)
+			throw new Exception("WebElement not found : "+sourceElement+" By locator is : "+by.toString());
 		return webelement;
 	}
 
